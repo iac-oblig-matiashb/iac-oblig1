@@ -1,4 +1,4 @@
-resource_group_name  = "iac-matiashb-state-rg"
-storage_account_name = "iacmatiashbtfstate"
+resource_group_name  = "rg-tfstate-matiashb"
+storage_account_name = "tfstatematiashb"
 container_name       = "tfstate"
 use_azuread_auth     = true

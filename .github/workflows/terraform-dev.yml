@@ -73,13 +73,13 @@ jobs:
         run: |
           terraform plan \
             -var="environment=dev" \
-            -var="backend_resource_group_name=iac-matiashb-state-rg" \
-            -var="backend_storage_account_name=iacmatiashbtfstate"
+            -var="backend_resource_group_name=rg-tfstate-matiashb" \
+            -var="backend_storage_account_name=tfstatematiashb"
 
       - name: Terraform apply - workload
         working-directory: stacks/workload
         run: |
           terraform apply -auto-approve \
             -var="environment=dev" \
-            -var="backend_resource_group_name=iac-matiashb-state-rg" \
-            -var="backend_storage_account_name=iacmatiashbtfstate"
+            -var="backend_resource_group_name=rg-tfstate-matiashb" \
+            -var="backend_storage_account_name=tfstatematiashb"
