@@ -1,0 +1,85 @@
+name: Terraform Dev
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Show Azure account
+        run: az account show
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init - network
+        working-directory: stacks/network
+        run: |
+          terraform init -reconfigure \
+            -backend-config="../../shared/backend.hcl" \
+            -backend-config="key=dev.tfstate"
+
+      - name: Terraform validate - network
+        working-directory: stacks/network
+        run: terraform validate
+
+      - name: Terraform plan - network
+        working-directory: stacks/network
+        run: terraform plan -var="environment=dev"
+
+      - name: Terraform apply - network
+        working-directory: stacks/network
+        run: terraform apply -auto-approve -var="environment=dev"
+
+      - name: Terraform init - workload
+        working-directory: stacks/workload
+        run: |
+          terraform init -reconfigure \
+            -backend-config="../../shared/backend.hcl" \
+            -backend-config="key=workload-dev.tfstate"
+
+      - name: Terraform validate - workload
+        working-directory: stacks/workload
+        run: terraform validate
+
+      - name: Terraform plan - workload
+        working-directory: stacks/workload
+        run: |
+          terraform plan \
+            -var="environment=dev" \
+            -var="backend_resource_group_name=iac-matiashb-state-rg" \
+            -var="backend_storage_account_name=iacmatiashbtfstate"
+
+      - name: Terraform apply - workload
+        working-directory: stacks/workload
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=dev" \
+            -var="backend_resource_group_name=iac-matiashb-state-rg" \
+            -var="backend_storage_account_name=iacmatiashbtfstate"
